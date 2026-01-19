@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+*.log
+
+# State files (created at runtime)
+/tmp/blinkstick*.json
+/tmp/blinkstick*.lock
+package-lock.json

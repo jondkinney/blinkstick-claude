@@ -1,0 +1,32 @@
+{
+  "name": "claude-code-blinkstick",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "BlinkStick LED status indicator for Claude Code - visual feedback showing when Claude is working vs waiting for input",
+  "main": "led-control.mjs",
+  "scripts": {
+    "working": "node led-control.mjs working",
+    "ready": "node led-control.mjs ready",
+    "off": "node led-control.mjs off",
+    "test": "node led-control.mjs ready test-session && sleep 6 && node led-control.mjs working test-session"
+  },
+  "keywords": [
+    "blinkstick",
+    "claude-code",
+    "led",
+    "status-indicator",
+    "hooks"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "blinkstick-node": "^0.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
