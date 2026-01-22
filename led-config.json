@@ -1,0 +1,48 @@
+{
+  "devices": {
+    "blinkstick": {
+      "adapter": "blinkstick",
+      "enabled": true,
+      "options": {
+        "totalLeds": 8
+      }
+    },
+    "fit-statUSB": {
+      "adapter": "serial",
+      "enabled": true,
+      "options": {
+        "portPattern": "cu.usbmodem"
+      }
+    }
+  },
+  "modes": {
+    "working": {
+      "blinkstick": { "color": "#642800", "ledCount": 1 },
+      "fit-statUSB": { "color": "#AA0800" }
+    },
+    "ready": {
+      "blinkstick": { "color": "#00FF00", "ledCount": 8 },
+      "fit-statUSB": { "color": "#00FF00" }
+    },
+    "dim-green": {
+      "blinkstick": { "color": "#006400", "ledCount": 1 },
+      "fit-statUSB": { "color": "#001900" }
+    },
+    "split": {
+      "blinkstick": { "color": "#FFFF00", "ledCount": 8 },
+      "fit-statUSB": { "color": "#FF4600" }
+    },
+    "dim-split": {
+      "blinkstick": { "color": "#646400", "ledCount": 1 },
+      "fit-statUSB": { "color": "#641800" }
+    },
+    "question": {
+      "blinkstick": { "color": "#FF00FF", "ledCount": 8 },
+      "fit-statUSB": { "color": "#FF0080" }
+    },
+    "dim-question": {
+      "blinkstick": { "color": "#640064", "ledCount": 1 },
+      "fit-statUSB": { "color": "#18000C" }
+    }
+  }
+}
