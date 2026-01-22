@@ -4,11 +4,12 @@ Visual status indicator for Claude Code using a BlinkStick LED device. Shows at 
 
 ## LED States
 
-| State       | LED Display                                 | Meaning                                     |
-| ----------- | ------------------------------------------- | ------------------------------------------- |
-| **Working** | Dim orange (1 LED)                          | Claude is processing your request           |
-| **Ready**   | Bright green (8 LEDs) → dims to 1 after 5s  | Claude finished, waiting for input          |
-| **Mixed**   | Bright yellow (8 LEDs) → dims to 1 after 5s | Multiple sessions: some ready, some working |
+| State        | LED Display                                  | Meaning                                      |
+| ------------ | -------------------------------------------- | -------------------------------------------- |
+| **Working**  | Dim orange (1 LED)                           | Claude is processing your request            |
+| **Ready**    | Bright green (8 LEDs) → dims to 1 after 5s   | Claude finished, waiting for input           |
+| **Question** | Bright magenta (8 LEDs) → dims to 1 after 5s | Claude asked a question or needs permission  |
+| **Mixed**    | Bright yellow (8 LEDs) → dims to 1 after 5s  | Multiple sessions: some ready, some working  |
 
 ## Requirements
 
@@ -68,12 +69,107 @@ Add the following to your Claude Code settings file (`~/.claude/settings.json`):
           }
         ]
       }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/blinkstick-claude/hooks/on-permission.sh"
+          }
+        ]
+      }
     ]
   }
 }
 ```
 
 Replace `/path/to/blinkstick-claude` with the actual path where you cloned this repo.
+
+### Hook Purposes
+
+| Hook                  | Script              | Purpose                                           |
+| --------------------- | ------------------- | ------------------------------------------------- |
+| `UserPromptSubmit`    | on-prompt-submit.sh | Sets LED to working (orange) when you send input  |
+| `Stop`                | on-stop.sh          | Sets LED to ready (green) or question (magenta)   |
+| `PermissionRequest`   | on-permission.sh    | Sets LED to question (magenta) for tool approval  |
+
+The `Stop` hook uses `detect-question.mjs` to analyze Claude's response and determine if it's asking a question. If so, the LED turns magenta instead of green.
+
+## Configuration
+
+LED behavior is configured in `led-config.json`. This file defines devices and color modes.
+
+### Device Configuration
+
+```json
+{
+  "devices": {
+    "blinkstick": {
+      "adapter": "blinkstick",
+      "enabled": true,
+      "options": {
+        "totalLeds": 8
+      }
+    },
+    "fit-statUSB": {
+      "adapter": "serial",
+      "enabled": true,
+      "options": {
+        "portPattern": "cu.usbmodem"
+      }
+    }
+  }
+}
+```
+
+**Available adapters:**
+
+| Adapter     | Description                          | Options                        |
+| ----------- | ------------------------------------ | ------------------------------ |
+| `blinkstick`| BlinkStick USB LED devices           | `totalLeds`: Number of LEDs    |
+| `serial`    | Serial devices (fit-statUSB, etc.)   | `portPattern`: Port name match |
+
+Set `"enabled": false` to disable a device.
+
+### Mode Configuration
+
+Each mode defines colors per device:
+
+```json
+{
+  "modes": {
+    "working": {
+      "blinkstick": { "color": "#642800", "ledCount": 1 },
+      "fit-statUSB": { "color": "#AA0800" }
+    },
+    "ready": {
+      "blinkstick": { "color": "#00FF00", "ledCount": 8 },
+      "fit-statUSB": { "color": "#00FF00" }
+    },
+    "question": {
+      "blinkstick": { "color": "#FF00FF", "ledCount": 8 },
+      "fit-statUSB": { "color": "#FF0080" }
+    }
+  }
+}
+```
+
+- `color`: Hex color code (RGB format, converted to GRB for BlinkStick)
+- `ledCount`: Number of LEDs to light (BlinkStick only)
+
+### All Modes
+
+| Mode           | Purpose                              |
+| -------------- | ------------------------------------ |
+| `working`      | Claude is processing                 |
+| `ready`        | Claude finished, no question         |
+| `dim-green`    | Ready state after 5s timeout         |
+| `split`        | Mixed state (some sessions working)  |
+| `dim-split`    | Mixed state after 5s timeout         |
+| `question`     | Claude asked a question or needs permission |
+| `dim-question` | Question state after 5s timeout      |
 
 ## How It Works
 
@@ -107,22 +203,27 @@ Runtime files are stored in `/tmp/`:
 
 ## Technical Details
 
-### LED Protocol
+### Adapter System
+
+The LED controller uses an adapter pattern to support multiple device types. Adapters are in `adapters/`:
+
+- `blinkstick.mjs` - BlinkStick USB devices
+- `serial.mjs` - Serial port devices (fit-statUSB)
+- `index.mjs` - LedManager that coordinates all enabled adapters
+
+### LED Protocol (BlinkStick)
 
 Uses BlinkStick report ID 6 for atomic batch updates (all 8 LEDs in one command). This prevents visual stepping artifacts when changing colors.
 
-WS2812 LEDs use **GRB** color order, not RGB.
+WS2812 LEDs use **GRB** color order, not RGB. The adapter handles this conversion automatically from the hex colors in `led-config.json`.
 
-### Color Values (GRB)
+### Question Detection
 
-| Color         | G   | R   | B   |
-| ------------- | --- | --- | --- |
-| Bright Green  | 255 | 0   | 0   |
-| Dim Green     | 100 | 0   | 0   |
-| Bright Orange | 50  | 255 | 0   |
-| Dim Orange    | 20  | 100 | 0   |
-| Bright Yellow | 255 | 255 | 0   |
-| Dim Yellow    | 100 | 100 | 0   |
+The `hooks/detect-question.mjs` script analyzes Claude's last message to determine if it's asking a question. It checks for:
+
+- Plan approval patterns ("would you like me to proceed", "should I continue")
+- Choice patterns ("which option", "would you prefer")
+- Messages ending with `?`
 
 ### API
 
@@ -132,6 +233,9 @@ node led-control.mjs working <session_id>
 
 # Set ready state (bright green → dim after 5s)
 node led-control.mjs ready <session_id>
+
+# Set question state (bright magenta → dim after 5s)
+node led-control.mjs question <session_id>
 ```
 
 The script handles:
