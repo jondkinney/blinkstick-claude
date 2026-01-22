@@ -80,6 +80,17 @@ Add the following to your Claude Code settings file (`~/.claude/settings.json`):
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/blinkstick-claude/hooks/on-prompt-submit.sh"
+          }
+        ]
+      }
     ]
   }
 }
@@ -94,8 +105,15 @@ Replace `/path/to/blinkstick-claude` with the actual path where you cloned this 
 | `UserPromptSubmit`    | on-prompt-submit.sh | Sets LED to working (orange) when you send input  |
 | `Stop`                | on-stop.sh          | Sets LED to ready (green) or question (magenta)   |
 | `PermissionRequest`   | on-permission.sh    | Sets LED to question (magenta) for tool approval  |
+| `PostToolUse`         | on-prompt-submit.sh | Sets LED to working when you answer a question    |
 
 The `Stop` hook uses `detect-question.mjs` to analyze Claude's response and determine if it's asking a question. If so, the LED turns magenta instead of green.
+
+### Why PostToolUse for AskUserQuestion?
+
+When Claude asks you a question using the `AskUserQuestion` tool, your response is treated as a **tool response**, not a new prompt. This means `UserPromptSubmit` doesn't fire when you answer.
+
+The `PostToolUse` hook with `AskUserQuestion` matcher detects when you've answered and Claude is resuming work, so the LED correctly turns orange.
 
 ## Configuration
 
