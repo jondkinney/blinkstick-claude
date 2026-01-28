@@ -7,6 +7,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { BlinkStickAdapter } from "./blinkstick.mjs";
 import { SerialAdapter } from "./serial.mjs";
+import { Blink1Adapter } from "./blink1.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_CONFIG_PATH = join(__dirname, "..", "led-config.json");
@@ -15,6 +16,7 @@ const DEFAULT_CONFIG_PATH = join(__dirname, "..", "led-config.json");
 const ADAPTERS = {
   blinkstick: BlinkStickAdapter,
   serial: SerialAdapter,
+  blink1: Blink1Adapter,
 };
 
 export class LedManager {
